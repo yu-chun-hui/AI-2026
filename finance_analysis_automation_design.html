@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>财务分析自动化系统设计文档</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.1/github-markdown-light.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --sidebar-w: 300px;
+    --accent: #0969da;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+    color: #1f2328;
+    background: #fff;
+  }
+  /* Layout */
+  #layout { display: flex; align-items: flex-start; }
+  #sidebar {
+    width: var(--sidebar-w);
+    flex: 0 0 var(--sidebar-w);
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    border-right: 1px solid #d0d7de;
+    background: #f6f8fa;
+    padding: 20px 16px;
+  }
+  #sidebar h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #57606a;
+    margin: 0 0 12px;
+  }
+  #toc { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  #toc li { margin: 1px 0; }
+  #toc a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: #1f2328;
+    text-decoration: none;
+    line-height: 1.4;
+    border-left: 2px solid transparent;
+  }
+  #toc a:hover { background: #eaeef2; }
+  #toc a.lvl-3 { padding-left: 22px; color: #57606a; font-size: 13px; }
+  #toc a.active { background: #ddf4ff; border-left-color: var(--accent); color: var(--accent); font-weight: 600; }
+  #content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    padding: 32px 24px 120px;
+  }
+  .markdown-body {
+    max-width: 920px;
+    width: 100%;
+  }
+  .markdown-body h1, .markdown-body h2 { scroll-margin-top: 16px; }
+  .markdown-body pre { background: #f6f8fa; }
+  .mermaid { background: #fff; text-align: center; margin: 16px 0; }
+  /* 强制代码块内的 CJK 字符占据精确的 2 个字符宽度，
+     使按 East-Asian-Width=2 排版的 ASCII 架构图在任何等宽字体下都能对齐 */
+  .markdown-body pre code .cjkw {
+    display: inline-block;
+    width: 2ch;
+    text-align: center;
+  }
+  /* Mobile */
+  #menu-toggle { display: none; }
+  @media (max-width: 900px) {
+    #sidebar {
+      position: fixed;
+      z-index: 50;
+      transform: translateX(-100%);
+      transition: transform .2s ease;
+      box-shadow: 2px 0 12px rgba(0,0,0,.15);
+    }
+    body.nav-open #sidebar { transform: translateX(0); }
+    #menu-toggle {
+      display: flex;
+      position: fixed;
+      top: 12px; left: 12px;
+      z-index: 60;
+      width: 40px; height: 40px;
+      align-items: center; justify-content: center;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 20px; cursor: pointer;
+    }
+    #content { padding-top: 64px; }
+  }
+</style>
+</head>
+<body>
+<button id="menu-toggle" aria-label="目录">☰</button>
+<div id="layout">
+  <nav id="sidebar">
+    <h2>目录</h2>
+    <ul id="toc"></ul>
+  </nav>
+  <main id="content">
+    <article id="doc" class="markdown-body"></article>
+  </main>
+</div>
+
+<script id="md-source" type="text/markdown"># 财务分析自动化系统设计文档
+
+## 1. 系统概述
+
+### 1.1 项目简介
+财务分析自动化系统是一个基于AI的智能财务报告分析平台，能够自动识别、解析和分析多种格式的财务文档（图像、PDF、Word），并生成专业的财务分析报告。
+
+### 1.2 核心价值
+- **智能化分析**：利用大语言模型和多模态AI技术进行深度财务分析
+- **多格式支持**：支持图像(PNG/JPG/JPEG等)、PDF、Word(.docx)等多种文件格式
+- **流式输出**：实时展示分析过程，提升用户体验
+- **专业报告导出**：自动生成格式化的PDF分析报告
+- **灵活配置**：支持自定义分析上下文和需求
+
+### 1.3 技术栈
+
+#### 后端技术
+- **框架**: FastAPI (Python 3.12)
+- **AI引擎**: AutoGen Agent Framework (autogen-agentchat / autogen-ext[openai] 0.6.4)
+- **LLM集成** (均通过 OpenAI 兼容接口接入，配置见 `backend/utils/llms.py`):
+  - 阿里云 DashScope (qwen3-vl-plus) - 多模态视觉模型，用于图像分析
+  - DeepSeek (deepseek-v4-pro) - 文本分析模型，用于 PDF 及其他文本
+  - IBM ICA Gateway (gpt-5.4-gus) - 用于 Word(.docx) 文档分析
+- **配置管理**: python-dotenv (API 密钥从 `backend/.env` 加载)
+- **PDF处理**: PyPDF2, pdfplumber
+- **PDF生成**: ReportLab
+- **文档处理**: python-docx
+- **图像处理**: Pillow
+
+#### 前端技术
+- **框架**: React 18
+- **UI库**: Material-UI (MUI)
+- **HTTP客户端**: Axios + Fetch API
+- **构建工具**: Create React App
+
+---
+
+## 2. 系统架构
+
+### 2.1 整体架构图
+
+```
+┌───────────────────────────────────────────────────────────┐
+│                     Frontend (React)                      │
+│    ┌─────────────┐  ┌───────────────┐  ┌─────────────┐    │
+│    │ UploadArea  │  │FinanceAnalysis│  │   Summary   │    │
+│    │             │  │    Display    │  │   Viewer    │    │
+│    └─────────────┘  └───────────────┘  └─────────────┘    │
+│           │                 │                 │           │
+│           └─────────────────┼─────────────────┘           │
+│                             │                             │
+└─────────────────────────────┼─────────────────────────────┘
+                              │ HTTP/REST API
+┌─────────────────────────────┼─────────────────────────────┐
+│                     Backend (FastAPI)                     │
+│                                                           │
+│   ┌───────────────────────────────────────────────────┐   │
+│   │                   Routers Layer                   │   │
+│   │  • finance_analysis.py (核心路由)                 │   │
+│   └───────────────────────────────────────────────────┘   │
+│                             │                             │
+│   ┌───────────────────────────────────────────────────┐   │
+│   │                  Services Layer                   │   │
+│   │  • ai_service.py      (AI分析服务)                │   │
+│   │  • pdf_service.py     (PDF提取服务)               │   │
+│   │  • export_pdf.py      (PDF导出服务)               │   │
+│   └───────────────────────────────────────────────────┘   │
+│                             │                             │
+│   ┌───────────────────────────────────────────────────┐   │
+│   │                   Models Layer                    │   │
+│   │  • finance_report.py  (数据模型定义)              │   │
+│   └───────────────────────────────────────────────────┘   │
+│                             │                             │
+│   ┌───────────────────────────────────────────────────┐   │
+│   │                    Utils Layer                    │   │
+│   │  • llms.py            (LLM客户端配置)             │   │
+│   │  • file_utils.py      (文件工具)                  │   │
+│   └───────────────────────────────────────────────────┘   │
+└─────────────────────────────┼─────────────────────────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+       ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
+       │  Qwen3-VL   │ │  DeepSeek   │ │ ICA Gateway │
+       │(多模态/图像)│ │ (PDF/文本)  │ │ (Word分析)  │
+       └─────────────┘ └─────────────┘ └─────────────┘
+```
+
+### 2.2 目录结构
+
+```
+backend/
+├── main.py                      # FastAPI应用入口
+├── models/
+│   └── finance_report.py        # 财务报告数据模型
+├── routers/
+│   └── finance_analysis.py      # 财务分析API路由
+├── services/
+│   ├── ai_service.py            # AI分析核心服务
+│   ├── pdf_service.py           # PDF文本提取服务
+│   ├── export_pdf.py            # PDF报告导出服务
+│   ├── excel_service.py         # (可选扩展)
+│   └── openapi_service.py       # (可选扩展)
+├── utils/
+│   ├── llms.py                  # LLM客户端配置 (从 .env 读取密钥)
+│   └── file_utils.py            # 文件处理工具
+├── .env                         # API密钥配置 (不纳入版本控制)
+└── requirements.txt             # Python依赖
+
+frontend/
+├── src/
+│   ├── components/
+│   │   ├── FinanceAnalysisDisplay.jsx  # 分析结果展示组件
+│   │   ├── UploadArea.jsx              # 文件上传组件
+│   │   ├── SummaryViewer.jsx           # 摘要查看器
+│   │   └── StreamingOutput.jsx         # 流式输出组件
+│   ├── services/
+│   │   └── api.js               # API调用封装
+│   └── App.jsx                  # 主应用组件
+└── package.json
+
+uploads/                         # 上传文件存储目录
+results/                         # 生成的PDF报告存储目录
+```
+
+---
+
+## 3. 核心功能模块
+
+### 3.1 文件上传与预处理模块
+
+#### 3.1.1 功能描述
+接收用户上传的财务文档，支持多种文件格式，并进行初步验证和存储。
+
+#### 3.1.2 支持的文件格式
+- **图像文件**: PNG, JPG, JPEG, GIF, BMP, WEBP
+- **PDF文档**: .pdf
+- **Word文档**: .docx
+
+#### 3.1.3 处理流程
+```
+用户上传文件 → 文件类型验证 → UUID命名保存 → 返回文件路径
+```
+
+#### 3.1.4 API端点
+```python
+POST /api/finance-analysis/analyze
+Content-Type: multipart/form-data
+
+Parameters:
+- file: 上传的文件 (required)
+- context: 分析上下文 (required)
+- requirements: 分析需求 (required)
+```
+
+#### 3.1.5 代码位置
+- 路由: `backend/routers/finance_analysis.py` (第26-62行)
+- 存储目录: `uploads/`
+
+---
+
+### 3.2 AI智能分析模块
+
+#### 3.2.1 功能描述
+根据文件类型智能选择合适的AI模型进行深度财务分析，支持流式输出。
+
+#### 3.2.2 模型选择策略
+
+| 文件类型 | 使用模型 | 模型提供商 | 用途 |
+|---------|---------|-----------|------|
+| 图像文件 | qwen3-vl-plus | 阿里云DashScope | 多模态视觉分析 |
+| PDF文档 | deepseek-v4-pro | DeepSeek | 文本内容分析 |
+| 其他文本文件 | deepseek-v4-pro | DeepSeek | 文本内容分析 |
+| Word文档 | gpt-5.4-gus | IBM ICA Gateway | 文档结构化分析 |
+
+> 模型选择逻辑：`.docx` 文件单独走 `_analyze_docx_with_ica`（ICA 客户端）；图像文件走支持视觉的 Qwen3-VL 客户端；PDF 及其它文本文件统一走 DeepSeek 客户端。详见 `ai_service._get_model_client_for_file_type` 与 `analyze_finance_report_stream` 的分支。
+
+#### 3.2.3 分析流程
+
+##### 图像文件分析流程
+```
+1. 加载图像文件 (Pillow)
+2. 转换为AutoGen Image对象
+3. 构建多模态提示词 (图像+文本)
+4. 调用Qwen-VL模型进行流式分析
+5. 实时返回分析结果
+```
+
+##### PDF文档分析流程
+```
+1. 使用pdfplumber提取文本内容
+2. 提取元数据 (标题、页数、作者等)
+3. 构建结构化提示词
+4. 调用DeepSeek模型进行分析
+5. 流式返回分析结果
+```
+
+##### Word文档分析流程
+```
+1. 使用python-docx读取文档段落文本 (_read_docx，在线程池中执行)
+2. 文本为空时直接返回错误，不输出分析标题
+3. 构建财务分析提示词 (文本截断至8000字符) + 系统消息
+4. 用 ica_model_client 创建 AutoGen AssistantAgent (model_client_stream=True)
+5. 通过"生产者-消费者"队列流式输出，并按字符施加打字机延迟
+```
+
+> ⚠️ **重要变更**：Word 文档分析已由原先的 **IBM WatsonX (Llama-3-2-90B-Vision)** 迁移到 **IBM ICA Gateway (gpt-5.4-gus)**。新实现不再手动获取访问令牌或拼装 WatsonX REST 请求，而是与 DeepSeek/Qwen 路径一致，复用 AutoGen `AssistantAgent` + OpenAI 兼容客户端 (`ica_model_client`)。核心方法为 `ai_service._analyze_docx_with_ica`。
+
+**生产者-消费者流式机制（DOCX 专用）**
+
+ICA 网关常常一次返回多个字符的 chunk，若直接在读取上游流的循环里对每个字符 `sleep(0.02)` 实现打字机效果，节流的背压会传导到 ICA 网关的 TCP 连接，导致较长分析在持续消费一分钟以上后被服务端以写超时/空闲超时主动断开（前端报 `peer closed connection ... incomplete chunked read`）。
+
+因此实现将"读取上游流"与"打字机节流"解耦：
+```
+producer 协程: 尽快抽干 agent.run_stream() 的 chunk 放入 asyncio.Queue，
+              让上游 HTTP 连接迅速、干净地关闭
+consumer (本生成器): 从队列取出内容，按字符 sleep(0.02) 后 yield 给前端
+```
+若上游在产出部分内容后断开，已输出内容保留，末尾追加错误提示。
+
+#### 3.2.4 分析内容结构
+
+所有分析结果遵循统一的结构化输出：
+
+```markdown
+# 正在分析财务报告...
+
+**文件信息**
+- 文件类型: [PDF/IMAGE/DOCX]
+- 使用模型: [模型名称]
+
+---
+
+## 文档概览
+- 文档类型和主要内容
+- 报告期间和时间范围
+- 编制单位和货币单位
+
+## 关键财务指标分析
+- 收入、利润、成本分析
+- 资产负债表关键项目
+- 现金流量分析
+- 财务比率分析
+
+## 趋势和比较
+- 与前期比较
+- 与行业标准比较
+- 趋势分析
+
+## 风险评估
+- 财务风险识别
+- 经营风险分析
+- 建议和改进措施
+```
+
+#### 3.2.5 核心代码实现
+
+**AI服务类**: `backend/services/ai_service.py`
+
+主要方法：
+- `analyze_finance_report_stream()`: 统一的流式分析入口（按扩展名分发：docx → ICA，图像 → Qwen3-VL，PDF/其它 → DeepSeek）
+- `_get_model_client_for_file_type()`: 智能模型选择（图像类返回视觉客户端，其余返回 DeepSeek 客户端）
+- `_read_docx()`: 用 python-docx 读取 Word 段落文本
+- `_analyze_docx_with_ica()`: Word文档专用分析（ICA 客户端 + 生产者-消费者打字机流式）
+
+**LLM客户端配置**: `backend/utils/llms.py`
+
+密钥统一通过 `python-dotenv` 从 `backend/.env` 读取，不再硬编码。三个客户端均为 OpenAI 兼容端点：
+
+```python
+import os
+from dotenv import load_dotenv
+from autogen_ext.models.openai import OpenAIChatCompletionClient
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+# Qwen3-VL 客户端 (支持视觉) - 图像分析
+model_client = OpenAIChatCompletionClient(
+    model="qwen3-vl-plus",
+    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    api_key=os.getenv("DASHSCOPE_API_KEY"),
+    model_info={"vision": True, "function_calling": True, "json_output": True,
+                "family": "unknown", "multiple_system_messages": True,
+                "structured_output": True},
+)
+
+# DeepSeek 客户端 (纯文本) - PDF/文本分析
+deepseek_model_client = OpenAIChatCompletionClient(
+    model="deepseek-v4-pro",
+    base_url="https://api.deepseek.com",
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    model_info={"vision": False, ...},
+)
+
+# IBM ICA 客户端 - Word(.docx) 分析
+ica_model_client = OpenAIChatCompletionClient(
+    model="gpt-5.4-gus",
+    base_url="https://api.nextgen-beta.ica.ibm.com/ica/v1",
+    api_key=os.getenv("ICA_API_KEY"),
+    model_info={"vision": False, ...},
+)
+```
+
+#### 3.2.6 流式响应机制
+
+使用AutoGen的流式输出能力，实现实时分析结果推送（图像/PDF/文本路径）：
+
+```python
+async for event in agent.run_stream(task=task_message):
+    if isinstance(event, ModelClientStreamingChunkEvent):
+        yield event.content  # 实时返回文本块
+    elif isinstance(event, TaskResult):
+        pass  # 任务完成，让循环自然结束
+```
+
+> 注意：此处对 `TaskResult` 故意使用 `pass` 而非 `break`。`TaskResult` 已是最后一个事件，提前 `break` 会触发生成器 `aclose()`，导致 AutoGen 内部的 OpenTelemetry span 在不同 async context 下 detach 失败（报 "Token was created in a different Context"）。
+
+Word(.docx) 路径不直接使用上述循环，而是采用前述的**生产者-消费者队列 + 逐字符打字机**机制（见 3.2.3），以兼顾打字机效果与 ICA 网关连接稳定性。
+
+---
+
+### 3.3 PDF文本提取模块
+
+#### 3.3.1 功能描述
+从PDF文件中提取文本内容和元数据，为AI分析提供结构化输入。
+
+#### 3.3.2 技术实现
+- **主引擎**: pdfplumber (更好的表格和布局支持)
+- **备用引擎**: PyPDF2 (当pdfplumber失败时)
+
+#### 3.3.3 提取内容
+```python
+{
+    'text': '完整的PDF文本内容',
+    'metadata': {
+        'title': '文档标题',
+        'author': '作者',
+        'pages': 页数,
+        'creation_date': '创建日期',
+        ...
+    },
+    'extraction_method': 'pdfplumber',
+    'extracted_at': '提取时间戳'
+}
+```
+
+#### 3.3.4 代码位置
+- 服务类: `backend/services/pdf_service.py`
+- 核心方法: `extract_text_from_pdf()` (第12-60行)
+
+---
+
+### 3.4 PDF报告导出模块
+
+#### 3.4.1 功能描述
+将AI分析结果转换为格式化的PDF报告，支持中文字体渲染。
+
+#### 3.4.2 字体支持
+系统自动检测并注册以下中文字体（按优先级，命中第一个存在的即停止）：
+1. macOS: STHeiti Light/Medium.ttc, PingFang.ttc, AppleSDGothicNeo.ttc, ArialHB.ttc
+2. Linux: DejaVuSans.ttf, wqy-microhei.ttc, NotoSansCJK-Regular.ttc
+3. Windows: simhei.ttf, simsun.ttc, msyh.ttc
+4. 自定义(最后尝试): SourceHanSansSC-Regular.otf
+
+> 说明：ReportLab 对 OTF 字体的 PostScript 轮廓支持不佳，故优先 TTF/TTC，OTF 放最后兜底。注册时字体名中的连字符 `-` 会被替换为下划线 `_`。若全部未命中，回退到内置字体 `Helvetica`。
+
+#### 3.4.3 PDF生成流程
+```
+1. 接收Markdown格式的分析结果
+2. 解析Markdown语法 (标题、列表、表格、加粗)
+3. 过滤AI状态信息 (跳过"正在分析..."等技术信息)
+4. 应用自定义样式 (标题、正文、表格)
+5. 使用ReportLab生成PDF
+6. 保存到 results/ 目录
+```
+
+#### 3.4.4 Markdown解析规则
+
+| Markdown元素 | PDF处理方式 |
+|-------------|------------|
+| `# 标题` | 一级标题样式 (蓝色, 16pt) |
+| `## 标题` | 二级标题样式 (浅蓝, 14pt) |
+| `### 标题` | 三级标题样式 (加粗, 12pt) |
+| `- 列表项` | 项目符号列表 (缩进10px) |
+| `\|表格\|` | 格式化表格 (表头高亮) |
+| `**加粗**` | 加粗文本 |
+| `---` | 分隔线 (间距) |
+
+#### 3.4.5 API端点
+```python
+POST /api/finance-analysis/export
+Content-Type: application/json
+
+Request Body:
+{
+    "analysisData": [],  # 结构化分析数据 (可选)
+    "markdown": "..."    # Markdown格式内容 (优先使用)
+}
+
+Response: PDF文件下载
+```
+
+#### 3.4.6 代码位置
+- 服务类: `backend/services/export_pdf.py`
+- 核心方法: `generate_pdf()` (第79-188行)
+- Markdown解析: `_add_markdown_content()` (第190-291行)
+
+---
+
+### 3.5 摘要生成模块
+
+#### 3.5.1 功能描述
+从详细的财务分析数据中提取关键信息，生成简洁的摘要报告。
+
+#### 3.5.2 摘要内容
+- 总体概况 (分析项目数量)
+- 关键财务指标 (前5个重要指标)
+- 统计信息 (总营收、总利润、分析时间)
+
+#### 3.5.3 API端点
+```python
+POST /api/finance-analysis/generate-summary
+Content-Type: application/json
+
+Request Body:
+{
+    "analysis_data": [...]
+}
+
+Response:
+{
+    "summary": {
+        "title": "财务分析摘要",
+        "sections": [...]
+    }
+}
+```
+
+#### 3.5.4 代码位置
+- 服务方法: `backend/services/ai_service.py::generate_summary_from_analysis()` (第381-442行)
+
+---
+
+## 4. 数据模型
+
+### 4.1 财务报告模型 (FinanceReport)
+
+```python
+class FinanceReport(BaseModel):
+    id: Optional[str]                    # 报告ID
+    title: str                           # 报告标题
+    description: str                     # 描述
+    value: Optional[float]               # 数值
+    unit: Optional[str]                  # 单位
+    trend: Optional[TrendType]           # 趋势 (上升/下降/稳定/波动)
+    risk_level: Optional[RiskLevel]      # 风险等级 (低/中/高)
+    recommendation: Optional[str]        # 建议
+    metrics: List[FinanceMetric]         # 财务指标列表
+    created_at: Optional[datetime]       # 创建时间
+```
+
+### 4.2 财务指标模型 (FinanceMetric)
+
+```python
+class FinanceMetric(BaseModel):
+    name: str                            # 指标名称
+    value: float                         # 当前值
+    unit: str                            # 单位
+    previous_value: Optional[float]      # 前期值
+    change_percentage: Optional[float]   # 变化百分比
+```
+
+### 4.3 枚举类型
+
+```python
+class TrendType(str, Enum):
+    UP = "上升"
+    DOWN = "下降"
+    STABLE = "稳定"
+    FLUCTUATING = "波动"
+
+class RiskLevel(str, Enum):
+    LOW = "低"
+    MEDIUM = "中"
+    HIGH = "高"
+```
+
+### 4.4 代码位置
+- 模型定义: `backend/models/finance_report.py`
+
+---
+
+## 5. API接口规范
+
+### 5.1 财务分析接口
+
+#### 5.1.1 分析财务报告
+```
+POST /api/finance-analysis/analyze
+Content-Type: multipart/form-data
+
+请求参数:
+- file: File (required) - 上传的财务文档
+- context: String (required) - 分析上下文
+- requirements: String (required) - 分析需求
+
+响应:
+- Content-Type: text/markdown
+- 流式返回Markdown格式的分析结果
+```
+
+#### 5.1.2 生成摘要
+```
+POST /api/finance-analysis/generate-summary
+Content-Type: application/json
+
+请求体:
+{
+    "analysis_data": [FinanceReport, ...]
+}
+
+响应:
+{
+    "summary": {
+        "title": "财务分析摘要",
+        "sections": [...]
+    }
+}
+```
+
+#### 5.1.3 导出PDF报告
+```
+POST /api/finance-analysis/export
+Content-Type: application/json
+
+请求体:
+{
+    "analysisData": [FinanceReport, ...],
+    "markdown": "Markdown格式内容"
+}
+
+响应:
+- Content-Type: application/pdf
+- PDF文件下载
+```
+
+#### 5.1.4 下载报告文件
+```
+GET /api/finance-analysis/download/{filename}
+
+响应:
+- Content-Type: application/pdf
+- PDF文件下载
+```
+
+### 5.2 健康检查接口
+
+```
+GET /api/ping
+
+响应:
+{
+    "status": "success",
+    "message": "pong"
+}
+```
+
+---
+
+## 6. 前端组件设计
+
+### 6.1 组件架构
+
+```
+App.jsx
+├── Header.jsx                    # 页面头部
+├── HeroSection.jsx               # 产品介绍区域
+├── ProductIntro.jsx              # 产品功能介绍
+├── WorkspaceArea.jsx             # 工作区容器
+│   ├── UploadArea.jsx            # 文件上传组件
+│   ├── StreamingOutput.jsx       # 流式输出显示
+│   ├── FinanceAnalysisDisplay.jsx # 分析结果展示 (详细/Markdown视图)
+│   ├── SummaryViewer.jsx         # 摘要查看器
+│   └── MindMapViewer.jsx         # 思维导图视图
+└── Footer.jsx                    # 页面底部
+
+> 解析完成后的视图 (FinanceAnalysisDisplay / SummaryViewer / MindMapViewer) 由 `App.jsx` 的 `viewMode` 切换。
+```
+
+### 6.2 核心组件说明
+
+#### 6.2.1 FinanceAnalysisDisplay 组件
+**文件**: `frontend/src/components/FinanceAnalysisDisplay.jsx`
+
+**功能**:
+- 展示财务分析结果
+- 支持两种视图模式：详细视图 / Markdown视图
+- 显示趋势图标 (上升/下降/稳定)
+- 显示风险等级标签
+- 可折叠的Accordion展示详细信息
+
+**Props**:
+```javascript
+{
+    analysisData: Array<FinanceReport>,  // 分析数据数组
+    onExportToExcel: Function             // 导出回调 (预留)
+}
+```
+
+#### 6.2.2 UploadArea 组件
+**功能**:
+- 拖拽上传文件
+- 文件类型验证
+- 显示上传进度
+- 提交分析请求
+
+#### 6.2.3 StreamingOutput 组件
+**功能**:
+- 实时显示流式分析结果
+- Markdown格式渲染
+- 滚动自动跟随
+
+### 6.3 API服务层
+
+**文件**: `frontend/src/services/api.js`
+
+主要方法：
+- `generateFinanceAnalysis(formData)`: 发起财务分析请求 (使用Fetch API处理流式响应)
+- `generateSummary(analysisData)`: 生成摘要
+- `exportFinanceAnalysisToExcel(analysisData)`: 导出分析结果
+- `pingServer()`: 服务器健康检查
+
+---
+
+## 7. 部署与配置
+
+### 7.1 环境要求
+
+#### 后端环境
+- Python 3.12+
+- 操作系统: macOS / Linux / Windows
+
+#### 前端环境
+- Node.js 16+
+- npm 或 yarn
+
+### 7.2 环境变量配置
+
+API 密钥已迁移到环境变量：在 `backend/.env` 文件中配置（该文件不纳入版本控制），由 `backend/utils/llms.py` 通过 `python-dotenv` 在启动时加载。
+
+```bash
+# backend/.env
+# 阿里云 DashScope API Key (用于 qwen3-vl-plus，图像分析)
+DASHSCOPE_API_KEY=sk-xxxxxxxxxxxxx
+
+# DeepSeek API Key (用于 deepseek-v4-pro，PDF/文本分析)
+DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxx
+
+# IBM ICA Gateway API Key (用于 gpt-5.4-gus，Word文档分析)
+ICA_API_KEY=xxxxxxxxxxxxx
+```
+
+### 7.3 安装步骤
+
+#### 后端安装
+```bash
+# 在仓库根目录执行 (导入使用 backend. 包前缀，需从根目录运行)
+source .venv/bin/activate           # 或 venv/
+pip install -r backend/requirements.txt
+```
+
+#### 前端安装
+```bash
+cd frontend
+npm install
+```
+
+### 7.4 启动服务
+
+#### 启动后端服务
+```bash
+# 在仓库根目录执行 (不要进入 backend/，因为导入使用 backend. 包前缀)
+python -m backend.main
+# 或使用 uvicorn
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+服务运行在: `http://localhost:8000` (API 文档 `/docs`，健康检查 `/api/ping`)
+
+#### 启动前端服务
+```bash
+cd frontend
+npm start
+```
+
+服务运行在: `http://localhost:3000`
+
+### 7.5 目录权限
+确保以下目录存在且可写：
+- `uploads/` - 存储上传的文件
+- `results/` - 存储生成的PDF报告
+
+系统会自动创建这些目录。
+
+---
+
+## 8. 业务流程
+
+### 8.1 完整分析流程
+
+```mermaid
+graph TB
+    A[用户上传财务文档] --> B{文件类型判断}
+    B -->|图像文件| C[使用Qwen3-VL分析]
+    B -->|PDF文档| D[使用DeepSeek分析]
+    B -->|Word文档| E[使用ICA Agent分析]
+    
+    C --> F[提取图像内容]
+    D --> G[提取PDF文本]
+    E --> H[提取Word内容]
+    
+    F --> I[构建分析提示词]
+    G --> I
+    H --> I
+    
+    I --> J[调用AI模型流式分析]
+    J --> K[实时返回分析结果]
+    K --> L[前端展示Markdown]
+    L --> M{用户操作}
+    
+    M -->|查看摘要| N[生成摘要报告]
+    M -->|导出PDF| O[生成PDF报告]
+    M -->|重新分析| A
+    
+    N --> P[显示摘要]
+    O --> Q[下载PDF文件]
+```
+
+### 8.2 数据流向
+
+```
+用户 → 前端上传 → 后端接收 → 文件保存 → AI分析 → 流式返回 → 前端展示
+                                              ↓
+                                         用户确认 → 导出PDF → 保存结果 → 下载
+```
+
+---
+
+## 9. 关键技术实现细节
+
+### 9.1 流式响应实现
+
+#### 后端实现
+使用FastAPI的`StreamingResponse`和AsyncGenerator：
+
+```python
+@router.post("/analyze")
+async def analyze_finance_report(...):
+    return StreamingResponse(
+        ai_service.analyze_finance_report_stream(file_path, context, requirements),
+        media_type="text/markdown"
+    )
+```
+
+#### 前端实现
+使用Fetch API的ReadableStream：
+
+```javascript
+const response = await fetch(`${API_BASE_URL}/finance-analysis/analyze`, {
+    method: 'POST',
+    body: formData,
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value);
+    // 实时更新UI
+}
+```
+
+### 9.2 多模态消息处理
+
+对于图像文件，使用AutoGen的多模态消息：
+
+```python
+from autogen_core import Image as AGImage
+from autogen_agentchat.messages import MultiModalMessage
+
+pil_image = PILImage.open(file_path)
+img = AGImage(pil_image)
+
+multi_modal_message = MultiModalMessage(
+    content=[prompt, img],  # 文本 + 图像
+    source="user"
+)
+```
+
+### 9.3 中文字体处理
+
+PDF生成时的中文字体注册逻辑：
+
+```python
+font_paths = [
+    '/System/Library/Fonts/STHeiti Light.ttc',  # macOS
+    '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',  # Linux
+    'C:/Windows/Fonts/simhei.ttf',  # Windows
+]
+
+for font_path in font_paths:
+    if os.path.exists(font_path):
+        font_name = os.path.splitext(os.path.basename(font_path))[0]
+        pdfmetrics.registerFont(TTFont(font_name, font_path))
+        self.chinese_font = font_name
+        break
+```
+
+### 9.4 Markdown到PDF转换
+
+解析Markdown语法并映射到ReportLab元素：
+
+```python
+# 标题处理
+if line.startswith('# '):
+    story.append(Paragraph(title, heading1_style))
+elif line.startswith('## '):
+    story.append(Paragraph(title, heading2_style))
+
+# 表格处理
+if line.startswith('|') and line.endswith('|'):
+    cells = [cell.strip() for cell in line.split('|')[1:-1]]
+    current_table_data.append(cells)
+
+# 列表处理
+if line.startswith('- '):
+    content = line[2:].strip()
+    story.append(Paragraph(f"• {content}", bullet_style))
+```
+
+---
+
+## 10. 错误处理与日志
+
+### 10.1 常见错误类型
+
+| 错误类型 | 原因 | 解决方案 |
+|---------|------|---------|
+| AuthenticationError | API Key无效或过期 | 检查并更新API密钥 |
+| FileNotFoundError | 上传文件不存在 | 验证文件路径 |
+| UnicodeDecodeError | 文件编码问题 | 尝试多种编码 (UTF-8, GBK) |
+| PDF Extraction Error | PDF格式损坏 | 使用备用提取引擎 |
+| Font Registration Error | 中文字体缺失 | 使用后备字体Helvetica |
+
+### 10.2 错误处理示例
+
+```python
+try:
+    pdf_content = pdf_service.extract_text_from_pdf(file_path)
+except Exception as e:
+    yield f"\n\n**错误**: PDF处理失败 - {str(e)}\n"
+    return
+```
+
+### 10.3 日志记录
+
+关键操作应添加日志：
+- 文件上传成功/失败
+- AI分析开始/完成
+- PDF生成状态
+- API调用错误
+
+---
+
+## 11. 性能优化建议
+
+### 11.1 当前性能瓶颈
+1. **大文件处理**: PDF文本提取可能较慢
+2. **AI响应时间**: 取决于LLM提供商的响应速度
+3. **PDF生成**: ReportLab渲染复杂表格时较慢
+
+### 11.2 优化建议
+
+#### 短期优化
+- 实现文件上传大小限制 (建议 < 50MB)
+- 添加请求超时控制
+- 使用异步IO优化文件操作
+
+#### 中期优化
+- 实现分析结果缓存 (相同文件不重复分析)
+- 添加任务队列 (Celery/RQ) 处理长时间任务
+- 实现分页加载大型分析结果
+
+#### 长期优化
+- 考虑使用更快的PDF解析库 (如pdfium)
+- 实现分布式AI推理
+- 添加CDN加速静态资源
+
+---
+
+## 12. 安全考虑
+
+### 12.1 数据安全
+- 上传文件使用UUID命名，避免文件名冲突和路径遍历攻击
+- 敏感API密钥已迁移到 `backend/.env`，通过 python-dotenv 加载，不再硬编码在代码中（`.env` 不纳入版本控制）
+- 生产环境应启用HTTPS
+
+### 12.2 输入验证
+- 验证文件类型白名单
+- 限制文件大小
+- 清理用户输入的context和requirements
+
+### 12.3 CORS配置
+当前配置允许所有来源 (`allow_origins=["*"]`)，生产环境应限制为特定域名。
+
+---
+
+## 13. 扩展性与未来规划
+
+### 13.1 可能的扩展方向
+
+#### 功能扩展
+- [ ] 支持更多文件格式 (Excel, CSV, TXT)
+- [ ] 批量文件分析
+- [ ] 历史分析报告管理
+- [ ] 分析结果对比功能
+- [ ] 自定义分析模板
+- [ ] 图表可视化 (趋势图、饼图等)
+
+#### 技术扩展
+- [ ] 支持更多LLM提供商 (OpenAI GPT-4, Claude, etc.)
+- [ ] 实现模型自动切换 (基于成本和性能)
+- [ ] 添加向量数据库支持 (RAG增强)
+- [ ] 微服务架构拆分
+
+#### 业务扩展
+- [ ] 多语言支持 (英文、日文等)
+- [ ] 行业特定分析模板 (金融、制造、零售等)
+- [ ] API订阅服务
+- [ ] 企业级部署方案
+
+### 13.2 技术债务
+1. **API密钥管理**: 已迁移到 `backend/.env` 环境变量 (python-dotenv)；进一步可接入专用密钥管理服务 (如 Vault)
+2. **错误处理**: 需要更完善的异常处理和用户友好的错误提示
+3. **测试覆盖**: 缺少单元测试和集成测试
+4. **文档完善**: 需要补充API文档和用户手册
+
+---
+
+## 14. 附录
+
+### 14.1 依赖包清单
+
+#### 后端依赖 (backend/requirements.txt)
+```
+fastapi
+uvicorn
+python-multipart
+pandas
+openpyxl==3.1.2
+xlsxwriter==3.2.0
+python-dotenv==1.0.1
+aiofiles==23.2.1
+pydantic>=2.0.0,<3.0.0
+autogen-agentchat==0.6.4
+autogen-ext[openai]==0.6.4
+# PDF处理
+PyPDF2==3.0.1
+pdfplumber==0.10.0
+# OpenAPI/Swagger解析
+pyyaml==6.0.1
+jsonschema==4.21.1
+# Docx 处理
+python-docx>=0.8.11
+# reportlab
+reportlab>=4.4.9
+```
+
+> 注：`Pillow` 经由 `autogen-ext[openai]` 间接引入，用于图像处理。
+
+#### 前端依赖 (package.json)
+```json
+{
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@mui/material": "^5.x",
+    "@mui/icons-material": "^5.x",
+    "axios": "^1.x",
+    "@emotion/react": "^11.x",
+    "@emotion/styled": "^11.x"
+  }
+}
+```
+
+### 14.2 API密钥获取指南
+
+> 获取密钥后，统一写入 `backend/.env` 对应的环境变量（见 7.2），无需再修改源码。
+
+#### 阿里云 DashScope
+1. 访问: https://dashscope.console.aliyun.com/
+2. 注册/登录阿里云账号
+3. 开通DashScope服务
+4. 创建API Key
+5. 写入 `backend/.env` 的 `DASHSCOPE_API_KEY`
+
+#### DeepSeek
+1. 访问: https://platform.deepseek.com/
+2. 注册/登录账号
+3. 创建API Key
+4. 写入 `backend/.env` 的 `DEEPSEEK_API_KEY`
+
+#### IBM ICA Gateway
+1. 取得 ICA Gateway 访问凭证 (base_url: `https://api.nextgen-beta.ica.ibm.com/ica/v1`)
+2. 获取 API Key
+3. 写入 `backend/.env` 的 `ICA_API_KEY`
+
+### 14.3 常见问题 (FAQ)
+
+**Q: 为什么分析结果出现乱码？**  
+A: 检查PDF文件的编码，系统会尝试UTF-8和GBK两种编码。如果仍有问题，可能是字体缺失，请确保系统安装了中文字体。
+
+**Q: 如何提高分析速度？**  
+A: 可以尝试切换到响应更快的模型，或者减小上传文件的大小。对于PDF文件，可以先压缩再上传。
+
+**Q: 支持的PDF文件大小有限制吗？**  
+A: 当前没有硬性限制，但建议不超过50MB。过大的文件会导致内存占用过高和响应缓慢。
+
+**Q: 可以自定义分析模板吗？**  
+A: 可以通过修改 `context` 和 `requirements` 参数来引导AI按照特定格式进行分析。
+
+---
+
+## 15. 版本历史
+
+| 版本 | 日期 | 变更说明 |
+|-----|------|---------|
+| 1.0.0 | 2024-XX-XX | 初始版本，支持图像/PDF/Word分析 |
+| 1.1.0 | 2026-06-18 | Word 分析由 WatsonX(Llama-Vision) 迁移到 IBM ICA Gateway(gpt-5.4-gus)，新增生产者-消费者打字机流式；模型升级为 qwen3-vl-plus / deepseek-v4-pro；API 密钥迁移到 `.env` (python-dotenv)；依赖与启动方式更新 |
+
+---
+
+## 16. 联系方式与维护
+
+- **项目负责人**: [待补充]
+- **技术支持**: [待补充]
+- **问题反馈**: [待补充]
+
+---
+
+**文档最后更新时间**: 2026年6月18日  
+**文档版本**: 1.1.0
+</script>
+<script>
+(function () {
+  var src = document.getElementById('md-source').textContent;
+
+  // Configure marked: route ```mermaid fences into <div class="mermaid">
+  var renderer = new marked.Renderer();
+  var origCode = renderer.code.bind(renderer);
+  renderer.code = function (code, infostring, escaped) {
+    var lang = (infostring || '').trim().split(/\s+/)[0];
+    if (lang === 'mermaid') {
+      return '<div class="mermaid">' + code + '</div>';
+    }
+    return origCode(code, infostring, escaped);
+  };
+
+  marked.setOptions({
+    renderer: renderer,
+    gfm: true,
+    breaks: false,
+    headerIds: true,
+    mangle: false,
+    highlight: function (code, lang) {
+      try {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      } catch (e) { return code; }
+    }
+  });
+
+  var doc = document.getElementById('doc');
+  doc.innerHTML = marked.parse(src);
+
+  // Highlight any blocks the highlight option missed
+  doc.querySelectorAll('pre code').forEach(function (b) {
+    if (!b.classList.contains('hljs')) { try { hljs.highlightElement(b); } catch (e) {} }
+  });
+
+  // Force每个 CJK 字符在代码块内占据精确 2ch 宽度，使 ASCII 架构图对齐
+  // (本字体下 CJK 实际渲染约 1.66×，纯空格无法对齐；包裹后由 CSS 强制为 2ch)
+  (function wrapCJKInCode() {
+    var re = /[⺀-鿿豈-﫿　-〿＀-￯]/;
+    doc.querySelectorAll('pre code').forEach(function (code) {
+      var walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT, null);
+      var targets = [], n;
+      while ((n = walker.nextNode())) { if (re.test(n.nodeValue)) targets.push(n); }
+      targets.forEach(function (tn) {
+        var frag = document.createDocumentFragment();
+        for (var ch of tn.nodeValue) {
+          if (re.test(ch)) {
+            var s = document.createElement('span');
+            s.className = 'cjkw';
+            s.textContent = ch;
+            frag.appendChild(s);
+          } else {
+            frag.appendChild(document.createTextNode(ch));
+          }
+        }
+        tn.parentNode.replaceChild(frag, tn);
+      });
+    });
+  })();
+
+  // Render mermaid diagrams
+  if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+    try { mermaid.run({ nodes: doc.querySelectorAll('.mermaid') }); } catch (e) {}
+  }
+
+  // Build TOC from h1/h2/h3
+  var toc = document.getElementById('toc');
+  var heads = doc.querySelectorAll('h1, h2, h3');
+  var seen = {};
+  heads.forEach(function (h) {
+    if (!h.id) {
+      var slug = (h.textContent || '').trim().toLowerCase()
+        .replace(/[^\w\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '') || 'h';
+      if (seen[slug]) { slug += '-' + (++seen[slug]); } else { seen[slug] = 1; }
+      h.id = slug;
+    }
+    if (h.tagName === 'H1') return; // skip the doc title in TOC
+    var li = document.createElement('li');
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    a.className = 'lvl-' + h.tagName.charAt(1);
+    li.appendChild(a);
+    toc.appendChild(li);
+    a.addEventListener('click', function () { document.body.classList.remove('nav-open'); });
+  });
+
+  // Scrollspy
+  var links = Array.prototype.slice.call(toc.querySelectorAll('a'));
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        links.forEach(function (l) { l.classList.remove('active'); });
+        var act = map[en.target.id];
+        if (act) {
+          act.classList.add('active');
+          act.scrollIntoView({ block: 'nearest' });
+        }
+      }
+    });
+  }, { rootMargin: '0px 0px -75% 0px', threshold: 0 });
+  doc.querySelectorAll('h2, h3').forEach(function (h) { observer.observe(h); });
+
+  // Mobile menu toggle
+  document.getElementById('menu-toggle').addEventListener('click', function () {
+    document.body.classList.toggle('nav-open');
+  });
+})();
+</script>
+</body>
+</html>

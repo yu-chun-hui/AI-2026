@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技术问答记录：Agent 自进化与反馈闭环设计</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.5.1/github-markdown-light.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --sidebar-w: 300px;
+    --accent: #0969da;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial, sans-serif;
+    color: #1f2328;
+    background: #fff;
+  }
+  /* Layout */
+  #layout { display: flex; align-items: flex-start; }
+  #sidebar {
+    width: var(--sidebar-w);
+    flex: 0 0 var(--sidebar-w);
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+    border-right: 1px solid #d0d7de;
+    background: #f6f8fa;
+    padding: 20px 16px;
+  }
+  #sidebar h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #57606a;
+    margin: 0 0 12px;
+  }
+  #toc { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  #toc li { margin: 1px 0; }
+  #toc a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: #1f2328;
+    text-decoration: none;
+    line-height: 1.4;
+    border-left: 2px solid transparent;
+  }
+  #toc a:hover { background: #eaeef2; }
+  #toc a.lvl-3 { padding-left: 22px; color: #57606a; font-size: 13px; }
+  #toc a.lvl-4 { padding-left: 36px; color: #57606a; font-size: 12px; }
+  #toc a.active { background: #ddf4ff; border-left-color: var(--accent); color: var(--accent); font-weight: 600; }
+  #content {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    padding: 32px 24px 120px;
+  }
+  .markdown-body {
+    max-width: 920px;
+    width: 100%;
+  }
+  .markdown-body h1, .markdown-body h2 { scroll-margin-top: 16px; }
+  .markdown-body pre { background: #f6f8fa; }
+  .mermaid { background: #fff; text-align: center; margin: 16px 0; }
+  /* 强制代码块内的 CJK 字符占据精确的 2 个字符宽度，
+     使按 East-Asian-Width=2 排版的 ASCII 架构图在任何等宽字体下都能对齐 */
+  .markdown-body pre code .cjkw {
+    display: inline-block;
+    width: 2ch;
+    text-align: center;
+  }
+  /* Mobile */
+  #menu-toggle { display: none; }
+  @media (max-width: 900px) {
+    #sidebar {
+      position: fixed;
+      z-index: 50;
+      transform: translateX(-100%);
+      transition: transform .2s ease;
+      box-shadow: 2px 0 12px rgba(0,0,0,.15);
+    }
+    body.nav-open #sidebar { transform: translateX(0); }
+    #menu-toggle {
+      display: flex;
+      position: fixed;
+      top: 12px; left: 12px;
+      z-index: 60;
+      width: 40px; height: 40px;
+      align-items: center; justify-content: center;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 20px; cursor: pointer;
+    }
+    #content { padding-top: 64px; }
+  }
+</style>
+</head>
+<body>
+<button id="menu-toggle" aria-label="目录">☰</button>
+<div id="layout">
+  <nav id="sidebar">
+    <h2>目录</h2>
+    <ul id="toc"></ul>
+  </nav>
+  <main id="content">
+    <article id="doc" class="markdown-body"></article>
+  </main>
+</div>
+
+<script id="md-source" type="text/markdown"># 技术问答记录：Agent 自进化与反馈闭环设计
+
+> 本文档整理了两个核心问题的完整解答：
+> 1. 如何让 Agent 实现自进化（self-evolving）和自学习（self-learning）
+> 2. 「反馈采集 + LLM-as-Judge 评估」最小闭环架构设计
+
+---
+
+## 问题一：Agent 表现不及预期，如何实现自进化与自学习？
+
+### 当前架构诊断
+
+当前 agent 基于 AutoGen `AssistantAgent`，每次都是单轮调用（new 一个 agent + 固定 `system_message` + `prompt`），没有记忆、没有反馈回路。这是“表现不及预期”且“无法进化”的根本原因。
+
+| 问题 | 现状 | 后果 |
+|------|------|------|
+| 无记忆 | 每次新建 agent，无历史 | 同样错误反复犯 |
+| 无反馈采集 | 没记录用户是否满意/结果对不对 | 没有学习信号 |
+| 无评估 | 没有打分/评测机制 | 不知道好坏，无法对比 |
+| Prompt 静态 | system_message 硬编码 | 改进只能人工改代码 |
+| 无失败案例库 | 出错就丢弃 | 经验无法沉淀 |
+
+### 核心概念：自进化的 4 个层次
+
+很多人误以为“自进化”= 让模型自己重新训练权重。实际上在 LLM Agent 工程实践中，几乎不需要碰模型权重。自进化主要发生在模型之外的几层：
+
+1. **Prompt/指令进化**（改 system prompt）— 最便宜，当天见效
+2. **记忆进化**（积累经验/案例）— 中等成本，越用越准
+3. **工具/技能进化**（新增能力）— 中等成本，扩展能力边界
+4. **权重进化**（微调/RL 训练）— 最贵，慢，需要大量数据
+
+**核心思想：自进化 = 反馈闭环（Feedback Loop）。没有反馈，就没有进化。**
+
+闭环 5 步：执行 → 评估（打分/反馈）→ 归因（为什么好/坏）→ 改进（更新 Prompt/记忆/工具）→ 沉淀（存入经验库）→ 回到执行。
+
+### 自进化完整闭环图
+
+```mermaid
+graph LR
+    A[1.执行<br/>Agent 产出结果] --> B[2.评估<br/>打分/反馈]
+    B --> C[3.归因<br/>为什么好/坏?]
+    C --> D[4.改进<br/>更新Prompt/记忆/工具]
+    D --> E[5.沉淀<br/>存入经验库]
+    E --> A
+    B -.人工反馈.-> B1[用户点赞/点踩]
+    B -.自动评估.-> B2[LLM-as-Judge<br/>规则校验]
+```
+
+### 四种落地方案（从易到难）
+
+#### 方案 1：反思 + 自我批判（Reflexion）— 最快见效
+
+让 agent 产出后，再用一个“批判者 agent”检查，发现问题就重做。运行时改进，不需训练。针对财务场景，批判者可专门检查“是否有数据被脱敏、是否漏了某个财务比率、结构是否完整”。
+
+```mermaid
+graph TD
+    A[用户请求] --> B[执行Agent<br/>产出财务分析v1]
+    B --> C[批判Agent<br/>检查数据/结构/遗漏]
+    C --> D{合格?}
+    D -->|否| E[反思: 指出具体问题]
+    E --> B
+    D -->|是| F[输出最终结果]
+```
+
+#### 方案 2：经验记忆库（Memory / RAG）— 越用越聪明
+
+把每次成功的分析、用户的修正存进向量数据库；下次遇到类似任务时检索相关经验注入 prompt（few-shot 动态注入）。系统不改代码、不改模型，但因记忆库增长而持续变好——这是真正的“自学习”。
+
+#### 方案 3：Prompt 自动优化（自进化 Prompt）
+
+收集失败案例后，让“优化器 LLM”分析失败原因，自动改写 system prompt，再用评测集验证新 prompt 是否更好。代表方法：DSPy、APE、PromptBreeder。
+
+#### 方案 4：微调 / 强化学习（RLHF / DPO）— 最重，最后才考虑
+
+仅当上面 3 种都做完、且已积累上千条高质量反馈数据时才值得。不建议过早做（贵、慢、易过拟合）。
+
+### 优先级建议
+
+| 优先级 | 做什么 | 为什么 |
+|--------|--------|--------|
+| P0 | 建反馈采集 + 把 system_message 改为可配置 | 没有数据就无法进化，地基 |
+| P1 | 加 Reflexion 批判 agent + LLM-as-Judge 评估 | 立刻提升质量 + 量化好坏 |
+| P2 | 加向量记忆库 | 真正的持续自学习 |
+| P3 | Prompt 自动优化 | 自动化迭代 |
+| P4 | 微调 | 数据量够大再说 |
+
+**一句话总结**：不需要让模型“自己重新训练”。真正的自进化 = 反馈采集 → 评估打分 → 反思改进 → 经验沉淀 的闭环。
+
+---
+
+## 问题二：「反馈采集 + LLM-as-Judge 评估」最小闭环架构设计
+
+### 设计目标与约束（基于当前代码）
+
+- **流式输出**：`/analyze` 返回 `StreamingResponse`（`text/markdown`），边生成边推送 → 必须在流结束时采集完整结果。
+- **无数据库**：目前只有文件存储（`uploads/`、`results/`）。
+- **无会话 ID**：一次分析没有唯一标识，无法关联结果与后续反馈。
+
+闭环要解决三件事：① 给每次分析一个 ID ② 流结束时落库 input/output ③ 收集人工反馈 + 自动 Judge 打分。
+
+### 整体闭环架构
+
+```mermaid
+graph TD
+    subgraph 前端
+        U1[用户上传报告] --> U2[流式接收Markdown结果]
+        U2 --> U3[展示结果 + 投票/评分/意见]
+        U3 --> U4[提交反馈]
+    end
+    subgraph 后端采集层
+        A1[/analyze 生成 analysis_id/] --> A2[流式输出给前端]
+        A2 --> A3[流结束钩子: 落库完整 input+output]
+        U4 --> A4[/feedback 接口/]
+    end
+    subgraph 评估层
+        A3 --> J1[LLM-as-Judge 异步打分]
+        J1 --> J2[多维度分数+理由]
+    end
+    subgraph 存储层
+        A3 --> DB[(analysis_records)]
+        A4 --> DB
+        J2 --> DB
+    end
+    subgraph 进化层
+        DB --> E1[低分/差评案例进失败库]
+        E1 --> E2[review 改进Prompt]
+    end
+```
+
+### 数据模型（核心）
+
+新增 SQLite + 三张表，把“一次分析”的全生命周期串起来。
+
+```mermaid
+erDiagram
+    ANALYSIS_RECORDS {
+        string analysis_id PK
+        string file_name
+        string file_type
+        string model_used
+        string system_prompt_version
+        text context
+        text requirements
+        text output_markdown
+        int latency_ms
+        string status
+        datetime created_at
+    }
+    HUMAN_FEEDBACK {
+        int id PK
+        string analysis_id FK
+        int rating
+        bool thumb_up
+        text comment
+        datetime created_at
+    }
+    JUDGE_SCORES {
+        int id PK
+        string analysis_id FK
+        float score_completeness
+        float score_accuracy
+        float score_structure
+        float score_no_redaction
+        float score_overall
+        text judge_reason
+        string judge_model
+        datetime created_at
+    }
+    ANALYSIS_RECORDS ||--o{ HUMAN_FEEDBACK : "1对多"
+    ANALYSIS_RECORDS ||--o{ JUDGE_SCORES : "1对多"
+```
+
+关键字段说明：
+
+| 字段 | 为什么必须有 |
+|------|-------------|
+| analysis_id | 关联流式输出、人工反馈、Judge 打分的唯一钥匙 |
+| system_prompt_version | 进化核心，能回答“换 prompt 后分数有没有变好” |
+| model_used | 对比 3 个模型（ICA/DeepSeek/Qwen）在哪类文件上表现好 |
+| output_markdown | 落库完整结果，否则无法事后评估 |
+
+存储选型：MVP 用 SQLite，数据量大了再换 PostgreSQL。
+
+### 关键流程
+
+#### 流程 1：分析时落库（流式输出采集）
+
+包一层生成器：边 yield 给前端边累积 buffer，流结束时把完整内容落库。要点：
+- 响应头回传 `X-Analysis-Id`，前端拿到后才能在提交反馈时带上它。
+- 用 `try/finally` 包住，即使用户中途关闭页面也要落库（标记 status=partial）。
+
+```mermaid
+sequenceDiagram
+    participant FE as 前端
+    participant R as analyze路由
+    participant G as 包装生成器
+    participant AI as ai_service
+    participant DB as 数据库
+    FE->>R: 上传文件+context+requirements
+    R->>R: 生成 analysis_id
+    R->>FE: 响应头带上 X-Analysis-Id
+    loop 每个chunk
+        AI-->>G: yield 字符
+        G-->>FE: 转发字符(打字机)
+        G->>G: buffer 累积
+    end
+    G->>DB: 流结束落库完整记录
+```
+
+#### 流程 2：人工反馈采集
+
+新增接口 `POST /api/finance-analysis/feedback`，请求体 = `{ analysis_id, rating, thumb_up, comment }`，插入 human_feedback 表。
+
+#### 流程 3：LLM-as-Judge 自动评估
+
+不阻塞用户，用 FastAPI `BackgroundTasks` 在落库后异步触发。构造 Judge Prompt（原始需求 + 输出结果 + 评分 Rubric），调用强模型，要求返回 JSON，写入 judge_scores 表。
+
+### Judge 评分维度（针对财务场景定制）
+
+| 维度 | 评什么 | 为什么重要 |
+|------|--------|-----------|
+| 完整性 | 4 章节（概览/指标/趋势/风险）是否齐全 | prompt 强制要求了结构 |
+| 数据准确性 | 引用数字是否与原文一致 | 财务分析最怕编数字 |
+| 无脱敏 | 有没有出现 █/***/XXX | ai_service.py 反复强调不要脱敏，高频痛点 |
+| 结构规范 | Markdown 格式是否正确 | 影响前端展示 |
+
+Judge Prompt 原则：输出 JSON 便于解析；每个维度给理由；用比被评模型更强的模型当裁判（避免自夸）。
+
+### 最小接口清单
+
+| 接口 | 方法 | 作用 | 改动量 |
+|------|------|------|--------|
+| /analyze | POST | 改造：加 analysis_id + 响应头 + 流结束落库 | 中 |
+| /feedback | POST | 新增：接收人工反馈 | 小 |
+| /records | GET | 新增：后台查记录+分数 | 小 |
+| /records/{id}/rejudge | POST | 新增：手动重评（调试） | 小 |
+
+### 闭环如何驱动进化
+
+因为表里有 system_prompt_version，可做 A/B 对比：v1 平均分 6.2 → v2 平均分 7.8，用数据证明改进有效。从“凭感觉调 prompt”升级到“用数据驱动进化”。
+
+```mermaid
+graph LR
+    A[积累N条记录 带人工分+Judge分] --> B[筛选低分案例]
+    B --> C[按维度归因: 脱敏? 漏章节?]
+    C --> D[针对性改 system_prompt 版本+1]
+    D --> E[新版本上线 记录version]
+    E --> F[对比新旧版本平均分]
+    F -.数据反馈.-> A
+```
+
+### MVP 落地优先级
+
+1. **Step 1**：建 SQLite + analysis_records 表，改造 /analyze 落库 + 回传 analysis_id（地基）
+2. **Step 2**：新增 /feedback 接口 + 前端加投票/评分组件（拿真实人工信号）
+3. **Step 3**：加 LLM-as-Judge 后台任务 + judge_scores 表（自动规模化评估）
+4. **Step 4**：system_prompt_version 化 + 简单后台查询页（支撑 A/B 对比，驱动进化）
+
+这个最小闭环当周就能搭起来，且立刻开始积累进化所需的数据。
+</script>
+<script>
+(function () {
+  var src = document.getElementById('md-source').textContent;
+
+  // Configure marked: route ```mermaid fences into <div class="mermaid">
+  var renderer = new marked.Renderer();
+  var origCode = renderer.code.bind(renderer);
+  renderer.code = function (code, infostring, escaped) {
+    var lang = (infostring || '').trim().split(/\s+/)[0];
+    if (lang === 'mermaid') {
+      return '<div class="mermaid">' + code + '</div>';
+    }
+    return origCode(code, infostring, escaped);
+  };
+
+  marked.setOptions({
+    renderer: renderer,
+    gfm: true,
+    breaks: false,
+    headerIds: true,
+    mangle: false,
+    highlight: function (code, lang) {
+      try {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      } catch (e) { return code; }
+    }
+  });
+
+  var doc = document.getElementById('doc');
+  doc.innerHTML = marked.parse(src);
+
+  // Highlight any blocks the highlight option missed
+  doc.querySelectorAll('pre code').forEach(function (b) {
+    if (!b.classList.contains('hljs')) { try { hljs.highlightElement(b); } catch (e) {} }
+  });
+
+  // Force每个 CJK 字符在代码块内占据精确 2ch 宽度，使 ASCII 架构图对齐
+  // (本字体下 CJK 实际渲染约 1.66×，纯空格无法对齐；包裹后由 CSS 强制为 2ch)
+  (function wrapCJKInCode() {
+    var re = /[⺀-鿿豈-﫿　-〿＀-￯]/;
+    doc.querySelectorAll('pre code').forEach(function (code) {
+      var walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT, null);
+      var targets = [], n;
+      while ((n = walker.nextNode())) { if (re.test(n.nodeValue)) targets.push(n); }
+      targets.forEach(function (tn) {
+        var frag = document.createDocumentFragment();
+        for (var ch of tn.nodeValue) {
+          if (re.test(ch)) {
+            var s = document.createElement('span');
+            s.className = 'cjkw';
+            s.textContent = ch;
+            frag.appendChild(s);
+          } else {
+            frag.appendChild(document.createTextNode(ch));
+          }
+        }
+        tn.parentNode.replaceChild(frag, tn);
+      });
+    });
+  })();
+
+  // Render mermaid diagrams
+  if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+    try { mermaid.run({ nodes: doc.querySelectorAll('.mermaid') }); } catch (e) {}
+  }
+
+  // Build TOC from h1/h2/h3/h4
+  var toc = document.getElementById('toc');
+  var heads = doc.querySelectorAll('h1, h2, h3, h4');
+  var seen = {};
+  heads.forEach(function (h) {
+    if (!h.id) {
+      var slug = (h.textContent || '').trim().toLowerCase()
+        .replace(/[^\w一-龥]+/g, '-').replace(/^-+|-+$/g, '') || 'h';
+      if (seen[slug]) { slug += '-' + (++seen[slug]); } else { seen[slug] = 1; }
+      h.id = slug;
+    }
+    if (h.tagName === 'H1') return; // skip the doc title in TOC
+    var li = document.createElement('li');
+    var a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    a.className = 'lvl-' + h.tagName.charAt(1);
+    li.appendChild(a);
+    toc.appendChild(li);
+    a.addEventListener('click', function () { document.body.classList.remove('nav-open'); });
+  });
+
+  // Scrollspy
+  var links = Array.prototype.slice.call(toc.querySelectorAll('a'));
+  var map = {};
+  links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        links.forEach(function (l) { l.classList.remove('active'); });
+        var act = map[en.target.id];
+        if (act) {
+          act.classList.add('active');
+          act.scrollIntoView({ block: 'nearest' });
+        }
+      }
+    });
+  }, { rootMargin: '0px 0px -75% 0px', threshold: 0 });
+  doc.querySelectorAll('h2, h3, h4').forEach(function (h) { observer.observe(h); });
+
+  // Mobile menu toggle
+  document.getElementById('menu-toggle').addEventListener('click', function () {
+    document.body.classList.toggle('nav-open');
+  });
+})();
+</script>
+</body>
+</html>
