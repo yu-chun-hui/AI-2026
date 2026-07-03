@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>课件下载中心 · AI 2026 Resources</title>
+<meta name="description" content="AI 2026 课件与资源下载中心" />
+<meta name="theme-color" content="#0f62fe" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-sans@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-sans@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-sans@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/600.css">
+<style>
+  :root {
+    --bg-0: #0b0b0c;
+    --bg-1: #121214;
+    --bg-2: #1a1a1d;
+    --text: #f4f4f4;
+    --text-dim: #a8a8b0;
+    --text-faint: #6b6b75;
+    --accent: #4589ff;
+    --accent-2: #78a9ff;
+    --accent-soft: rgba(69,137,255,0.16);
+    --border: #2a2a30;
+    --ok: #42be65;
+    --font-zh: 'IBM Plex Sans', 'Noto Sans SC', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-en: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'JetBrains Mono', Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg-0); color: var(--text); font-family: var(--font-zh); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  body { display: flex; flex-direction: column; min-height: 100vh; position: relative; }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(69,137,255,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(69,137,255,0.045) 1px, transparent 1px);
+    background-size: 48px 48px; background-position: -1px -1px;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 75%);
+  }
+
+  .topbar {
+    position: relative; display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 40px; z-index: 2;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-en); font-size: 13px; color: var(--text-dim); letter-spacing: 0.5px; text-decoration: none; }
+  .brand .dot { width: 9px; height: 9px; background: var(--accent); border-radius: 2px; box-shadow: 0 0 14px var(--accent); }
+  .brand b { color: var(--text); font-weight: 600; }
+  .verified-pill {
+    font-family: var(--font-mono); font-size: 11px;
+    background: rgba(66,190,101,0.12); border: 1px solid rgba(66,190,101,0.35);
+    padding: 6px 12px; border-radius: 20px; color: var(--ok);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+
+  .wrap { flex: 1; max-width: 960px; width: 100%; margin: 0 auto; padding: 30px 24px 60px; position: relative; z-index: 2; }
+
+  .page-head { margin-bottom: 30px; animation: fade-in 0.8s ease; }
+  .page-head .eyebrow { font-family: var(--font-en); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent-2); margin-bottom: 12px; }
+  .page-head h1 {
+    font-size: clamp(28px, 5vw, 44px); font-weight: 600; letter-spacing: -0.5px; line-height: 1.15;
+    background: linear-gradient(180deg, #ffffff 30%, #b8b8c0 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 14px;
+  }
+  .page-head p { font-size: 14px; color: var(--text-dim); line-height: 1.7; max-width: 620px; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; animation: fade-in 0.8s ease 0.1s both; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px; border-radius: 8px; font-size: 13.5px; font-weight: 600;
+    font-family: var(--font-zh); cursor: pointer; text-decoration: none; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); box-shadow: 0 4px 18px rgba(69,137,255,0.3); }
+  .btn-primary:hover { background: #5a97ff; transform: translateY(-1px); }
+  .btn-ghost { background: var(--bg-2); color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent-2); }
+
+  @keyframes fade-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; animation: fade-in 0.8s ease 0.2s both; }
+  .file-card {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 18px 18px 16px;
+    background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border: 1px solid var(--border); border-radius: 12px;
+    transition: all 0.2s;
+  }
+  .file-card:hover { border-color: var(--accent); box-shadow: 0 6px 22px rgba(69,137,255,0.14); transform: translateY(-2px); }
+  .file-card .top { display: flex; align-items: flex-start; gap: 12px; }
+  .file-card .ico {
+    width: 40px; height: 40px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; border-radius: 9px;
+    background: var(--accent-soft); border: 1px solid rgba(69,137,255,0.25);
+  }
+  .file-card .meta { min-width: 0; }
+  .file-card .name { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.4; word-break: break-word; }
+  .file-card .sub { font-size: 11px; color: var(--text-faint); font-family: var(--font-mono); margin-top: 3px; }
+  .file-card .desc { font-size: 12px; color: var(--text-dim); line-height: 1.6; flex: 1; }
+  .dl-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 9px 14px; border-radius: 8px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-zh); font-size: 12.5px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .dl-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-2); }
+  .dl-btn.busy { opacity: 0.6; pointer-events: none; }
+  .dl-btn.done { color: var(--ok); border-color: rgba(66,190,101,0.4); background: rgba(66,190,101,0.1); }
+
+  footer {
+    position: relative; z-index: 2; padding: 24px 40px; text-align: center;
+    border-top: 1px solid var(--border); background: rgba(11,11,12,0.6); backdrop-filter: blur(8px);
+    font-size: 12px; color: var(--text-faint); font-family: var(--font-en); letter-spacing: 0.3px;
+  }
+  footer b { color: var(--text-dim); font-weight: 500; }
+
+  @media (max-width: 680px) {
+    .topbar { padding: 18px 20px; }
+    .wrap { padding: 24px 16px 40px; }
+    .grid { grid-template-columns: 1fr; }
+    footer { padding: 18px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="./index.html">
+    <span class="dot"></span>
+    <span><b>AI 2026</b> · Learning Hub</span>
+  </a>
+  <span class="verified-pill">✓ 已验证 · VERIFIED</span>
+</header>
+
+<main class="wrap">
+  <div class="page-head">
+    <div class="eyebrow">Download Center</div>
+    <h1>课件下载中心</h1>
+    <p>以下为 AI 2026 课程全部课件与资源。点击「下载」即可保存单个文件，或使用「打包下载全部」获取完整压缩包（来自 GitHub 仓库 <span style="font-family:var(--font-mono);color:var(--accent-2);">yu-chun-hui/AI-2026</span>）。</p>
+  </div>
+
+  <div class="toolbar">
+    <a class="btn btn-primary" href="https://github.com/yu-chun-hui/AI-2026/archive/refs/heads/main.zip">
+      ⬇ 打包下载全部 (ZIP)
+    </a>
+    <a class="btn btn-ghost" href="https://github.com/yu-chun-hui/AI-2026" target="_blank" rel="noopener">
+      ⌥ 在 GitHub 查看
+    </a>
+    <a class="btn btn-ghost" href="./index.html">← 返回首页</a>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  © 2026 Yu-Chun-Hui · AI 2026 Learning Hub · 教学专用
+  <span style="margin: 0 8px; opacity: 0.4;">|</span>
+  <b>Generative AI Courseware</b>
+</footer>
+
+<script>
+  // === Access guard: must have verified on index.html this session ===
+  if (sessionStorage.getItem('ai2026_student') !== '1') {
+    location.replace('./index.html');
+  }
+
+  const RAW_BASE = 'https://raw.githubusercontent.com/yu-chun-hui/AI-2026/main/';
+
+  // File catalog — mirrors the GitHub repo contents.
+  const FILES = [
+    { file: 'AI知识介绍.pptx', type: 'pptx', size: '230 KB', desc: 'AI 知识总览介绍课件，涵盖核心概念与发展脉络。' },
+    { file: 'Agent_Self-Evolution_and_Feedback_Loop_Design.pptx', type: 'pptx', size: '86 KB', desc: 'Agent 自进化与反馈循环设计（演示文稿）。' },
+    { file: 'Agent_Self-Evolution_and_Feedback_Loop_Design.html', type: 'html', size: '18 KB', desc: 'Agent 自进化与反馈循环设计（网页版）。' },
+    { file: 'Microsoft_AutoGen_AI_Agent_Framework_Introduction.pptx', type: 'pptx', size: '93 KB', desc: '微软 AutoGen AI Agent 框架介绍。' },
+    { file: 'Python_FastAPI_Framework_Introduction.pptx', type: 'pptx', size: '93 KB', desc: 'Python FastAPI 后端框架介绍。' },
+    { file: 'Frontend_React_Framework_Introduction.pptx', type: 'pptx', size: '94 KB', desc: '前端 React 框架介绍。' },
+    { file: 'Finance_Analysis_Automation_Detailed.pptx', type: 'pptx', size: '118 KB', desc: '金融分析自动化详解（演示文稿）。' },
+    { file: 'finance_analysis_automation_design.html', type: 'html', size: '41 KB', desc: '金融分析自动化设计方案（网页版）。' },
+    { file: 'UserfulLinks.docx', type: 'docx', size: '14 KB', desc: '常用链接与学习资源汇总文档。' },
+    { file: 'llms.py', type: 'py', size: '653 B', desc: '大语言模型调用示例源码。' },
+    { file: 'testing_poem.py', type: 'py', size: '685 B', desc: '测试用示例脚本（写诗）。' }
+  ];
+
+  const ICONS = { pptx: '📊', docx: '📄', html: '🌐', py: '🐍' };
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = FILES.map((f, i) => `
+    <div class="file-card">
+      <div class="top">
+        <div class="ico">${ICONS[f.type] || '📁'}</div>
+        <div class="meta">
+          <div class="name">${f.file}</div>
+          <div class="sub">${f.type.toUpperCase()} · ${f.size}</div>
+        </div>
+      </div>
+      <div class="desc">${f.desc}</div>
+      <button class="dl-btn" data-i="${i}">⬇ 下载 Download</button>
+    </div>
+  `).join('');
+
+  // Fetch-and-save so every file (including text & Chinese-named files) truly downloads.
+  async function download(file, btn) {
+    const original = btn.textContent;
+    btn.classList.add('busy');
+    btn.textContent = '下载中…';
+    try {
+      const res = await fetch(RAW_BASE + encodeURIComponent(file));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = file;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      btn.classList.remove('busy');
+      btn.classList.add('done');
+      btn.textContent = '✓ 已下载';
+      setTimeout(() => { btn.classList.remove('done'); btn.textContent = original; }, 2500);
+    } catch (err) {
+      // Fallback: open the raw file directly in a new tab.
+      btn.classList.remove('busy');
+      btn.textContent = original;
+      window.open(RAW_BASE + encodeURIComponent(file), '_blank', 'noopener');
+    }
+  }
+
+  grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.dl-btn');
+    if (!btn) return;
+    download(FILES[+btn.dataset.i].file, btn);
+  });
+</script>
+
+</body>
+</html>

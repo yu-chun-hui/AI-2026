@@ -1,17 +1,431 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="zh-CN">
 <head>
-  <title>AI-2026</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI 2026 · 学习中心 Learning Hub</title>
+<meta name="description" content="AI 2026 生成式 AI 学习中心 · 课件与资源下载" />
+<meta name="author" content="Yu-Chun-Hui" />
+<meta name="theme-color" content="#0f62fe" />
+<meta property="og:title" content="AI 2026 · 学习中心" />
+<meta property="og:description" content="AI 2026 生成式 AI 学习中心 · 课件与资源下载" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-sans@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-sans@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-sans@5/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/600.css">
+<style>
+  :root {
+    --bg-0: #0b0b0c;
+    --bg-1: #121214;
+    --bg-2: #1a1a1d;
+    --text: #f4f4f4;
+    --text-dim: #a8a8b0;
+    --text-faint: #6b6b75;
+    --accent: #4589ff;
+    --accent-2: #78a9ff;
+    --accent-soft: rgba(69,137,255,0.16);
+    --border: #2a2a30;
+    --danger: #fa4d56;
+    --font-zh: 'IBM Plex Sans', 'Noto Sans SC', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-en: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'JetBrains Mono', Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg-0); color: var(--text); font-family: var(--font-zh); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  body { display: flex; flex-direction: column; min-height: 100vh; position: relative; }
+
+  /* Ambient grid */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(69,137,255,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(69,137,255,0.045) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: -1px -1px;
+    pointer-events: none;
+    mask-image: radial-gradient(ellipse at center, black, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black, transparent 70%);
+  }
+  body::after {
+    content: '';
+    position: fixed; top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, var(--accent-soft), transparent 60%);
+    pointer-events: none;
+    filter: blur(40px);
+  }
+
+  /* Header */
+  .topbar {
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 24px 40px;
+    z-index: 2;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-en); font-size: 13px; color: var(--text-dim); letter-spacing: 0.5px; }
+  .brand .dot { width: 9px; height: 9px; background: var(--accent); border-radius: 2px; box-shadow: 0 0 14px var(--accent); }
+  .brand b { color: var(--text); font-weight: 600; }
+  .repo-pill {
+    font-family: var(--font-mono); font-size: 12px;
+    background: var(--bg-2); border: 1px solid var(--border);
+    padding: 6px 12px; border-radius: 20px;
+    color: var(--text-dim); text-decoration: none;
+    transition: all 0.2s;
+  }
+  .repo-pill:hover { border-color: var(--accent); color: var(--accent-2); }
+
+  /* Hero */
+  .hero {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 60px 24px 40px;
+    text-align: center;
+    position: relative; z-index: 2;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 18px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(69,137,255,0.3);
+    border-radius: 100px;
+    font-family: var(--font-en);
+    font-size: 13px; letter-spacing: 0.6px;
+    color: var(--accent-2);
+    margin-bottom: 32px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    animation: fade-in 1s ease;
+  }
+  .badge:hover { background: rgba(69,137,255,0.26); border-color: var(--accent); transform: translateY(-1px); }
+  .badge .pulse {
+    width: 8px; height: 8px; background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 var(--accent);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(69,137,255,0.6); }
+    70% { box-shadow: 0 0 0 12px rgba(69,137,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(69,137,255,0); }
+  }
+
+  h1 {
+    font-size: clamp(34px, 6vw, 64px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -1px;
+    margin-bottom: 18px;
+    background: linear-gradient(180deg, #ffffff 30%, #b8b8c0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: fade-in 1s ease 0.1s both;
+  }
+  .subtitle {
+    font-size: clamp(15px, 1.5vw, 18px);
+    color: var(--text-dim);
+    max-width: 640px;
+    line-height: 1.7;
+    margin-bottom: 40px;
+    animation: fade-in 1s ease 0.2s both;
+  }
+  .subtitle b { color: var(--text); font-weight: 500; }
+
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  /* Tags */
+  .tags {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    justify-content: center;
+    max-width: 760px;
+    margin-bottom: 50px;
+    animation: fade-in 1s ease 0.3s both;
+  }
+  .tags span {
+    font-family: var(--font-en);
+    font-size: 12px;
+    padding: 5px 12px;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+  }
+
+  /* Info cards */
+  .info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+    animation: fade-in 1s ease 0.4s both;
+  }
+  .info-card {
+    background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    text-align: left;
+  }
+  .info-card .label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--text-faint);
+    font-family: var(--font-en);
+    margin-bottom: 6px;
+  }
+  .info-card .value { font-size: 15px; font-weight: 500; }
+  .info-card .sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  /* Entry CTA */
+  .cta {
+    margin-top: 48px;
+    animation: fade-in 1s ease 0.5s both;
+  }
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 30px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-zh);
+    font-size: 15px; font-weight: 600;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 6px 24px rgba(69,137,255,0.35);
+  }
+  .cta-btn:hover { background: #5a97ff; transform: translateY(-2px); box-shadow: 0 10px 32px rgba(69,137,255,0.45); }
+  .cta-btn .arrow { transition: transform 0.2s; }
+  .cta-btn:hover .arrow { transform: translateX(4px); }
+  .cta-note { margin-top: 14px; font-size: 12px; color: var(--text-faint); font-family: var(--font-mono); letter-spacing: 0.5px; }
+
+  /* Footer */
+  footer {
+    position: relative; z-index: 2;
+    padding: 24px 40px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    background: rgba(11,11,12,0.6);
+    backdrop-filter: blur(8px);
+    font-size: 12px;
+    color: var(--text-faint);
+    font-family: var(--font-en);
+    letter-spacing: 0.3px;
+  }
+  footer b { color: var(--text-dim); font-weight: 500; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(6,6,8,0.78);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 100;
+    padding: 24px;
+  }
+  .modal-overlay.open { display: flex; animation: overlay-in 0.25s ease; }
+  @keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    width: 100%; max-width: 420px;
+    background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 34px 32px;
+    text-align: center;
+    position: relative;
+    animation: modal-in 0.3s cubic-bezier(0.16,1,0.3,1);
+  }
+  @keyframes modal-in { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: none; } }
+  .modal .lock { font-size: 34px; margin-bottom: 14px; }
+  .modal h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .modal .en { display: block; font-family: var(--font-en); font-size: 11px; color: var(--text-faint); letter-spacing: 2px; text-transform: uppercase; margin-top: 6px; font-weight: 400; }
+  .modal p { font-size: 13px; color: var(--text-dim); line-height: 1.7; margin-bottom: 24px; }
+  .code-input {
+    width: 100%;
+    background: var(--bg-0);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 20px;
+    text-align: center;
+    letter-spacing: 8px;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+  }
+  .code-input::placeholder { letter-spacing: 4px; color: var(--text-faint); font-size: 14px; }
+  .code-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .code-input.error { border-color: var(--danger); animation: shake 0.4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 20%,60%{transform:translateX(-8px);} 40%,80%{transform:translateX(8px);} }
+  .verify-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff; border: none; border-radius: 10px;
+    font-family: var(--font-zh); font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .verify-btn:hover { background: #5a97ff; }
+  .error-msg { color: var(--danger); font-size: 12px; margin-top: 14px; min-height: 16px; font-family: var(--font-mono); }
+  .modal-close {
+    position: absolute; top: 14px; right: 16px;
+    background: none; border: none; color: var(--text-faint);
+    font-size: 22px; cursor: pointer; line-height: 1;
+    transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  @media (max-width: 680px) {
+    .topbar { padding: 18px 20px; }
+    .info { grid-template-columns: 1fr; }
+    .hero { padding: 40px 20px 30px; }
+    footer { padding: 18px 20px; }
+  }
+</style>
 </head>
 <body>
-  <h1>AI-2026 Learning Hub</h1>
-  <p>Welcome Harvey 👋</p>
 
-  <ul>
-    <li>GPT-5</li>
-    <li>Claude Code</li>
-    <li>Codex</li>
-    <li>Agent</li>
-  </ul>
+<header class="topbar">
+  <div class="brand">
+    <span class="dot"></span>
+    <span><b>AI 2026</b> · Generative AI Learning Hub</span>
+  </div>
+  <a class="repo-pill" href="https://github.com/yu-chun-hui/AI-2026" target="_blank" rel="noopener">⌥ GitHub Repo</a>
+</header>
+
+<main class="hero">
+  <a class="badge" id="enrollBadge">
+    <span class="pulse"></span>
+    学生入口 · STUDENT ENTRANCE →
+  </a>
+
+  <h1>AI 2026 学习中心</h1>
+
+  <p class="subtitle">
+    <b>Generative AI Learning Hub</b> · 生成式 AI 启蒙与实战课件
+    <span style="display:block;margin-top:6px;font-family:var(--font-mono);font-size:0.78em;letter-spacing:1.5px;opacity:0.55;">COURSEWARE &amp; RESOURCES · 2026</span>
+  </p>
+
+  <div class="tags">
+    <span>AI 基础</span>
+    <span>大语言模型</span>
+    <span>Agent</span>
+    <span>AutoGen</span>
+    <span>RAG</span>
+    <span>FastAPI</span>
+    <span>React</span>
+    <span>Prompt</span>
+    <span>金融自动化</span>
+    <span>知识介绍</span>
+  </div>
+
+  <div class="info">
+    <div class="info-card">
+      <div class="label">COURSE</div>
+      <div class="value">AI 2026</div>
+      <div class="sub">生成式 AI 课程</div>
+    </div>
+    <div class="info-card">
+      <div class="label">RESOURCES</div>
+      <div class="value">11 份课件</div>
+      <div class="sub">PPT · 文档 · 源码</div>
+    </div>
+    <div class="info-card">
+      <div class="label">ACCESS</div>
+      <div class="value">学生验证码</div>
+      <div class="sub">Verification required</div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <button class="cta-btn" id="enrollBtn">
+      进入课件下载 · 输入验证码
+      <span class="arrow">→</span>
+    </button>
+    <div class="cta-note">STUDENTS ONLY · 请输入验证码进入资源下载</div>
+  </div>
+</main>
+
+<footer>
+  © 2026 Yu-Chun-Hui · AI 2026 Learning Hub · 教学专用
+  <span style="margin: 0 8px; opacity: 0.4;">|</span>
+  <b>Generative AI Courseware</b>
+</footer>
+
+<!-- Verification modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" id="modalClose" aria-label="关闭">×</button>
+    <div class="lock">🔒</div>
+    <h2>
+      学生入口
+      <span class="en">Student Verification</span>
+    </h2>
+    <p>请输入课程验证码以进入课件下载中心。<br>Enter the verification code to access downloads.</p>
+    <input class="code-input" id="codeInput" type="text" inputmode="numeric" maxlength="8" placeholder="验证码" autocomplete="off" />
+    <button class="verify-btn" id="verifyBtn">验证并进入 · VERIFY</button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+</div>
+
+<script>
+  // === 学生验证码 · Student verification code ===
+  const ACCESS_CODE = '2026';
+
+  const modal = document.getElementById('modal');
+  const codeInput = document.getElementById('codeInput');
+  const errorMsg = document.getElementById('errorMsg');
+
+  function openModal() {
+    modal.classList.add('open');
+    errorMsg.textContent = '';
+    codeInput.classList.remove('error');
+    codeInput.value = '';
+    setTimeout(() => codeInput.focus(), 120);
+  }
+  function closeModal() { modal.classList.remove('open'); }
+
+  document.getElementById('enrollBadge').addEventListener('click', openModal);
+  document.getElementById('enrollBtn').addEventListener('click', openModal);
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  function verify() {
+    const val = codeInput.value.trim();
+    if (val === ACCESS_CODE) {
+      // Grant access for this session and go to the download center.
+      sessionStorage.setItem('ai2026_student', '1');
+      errorMsg.style.color = 'var(--accent-2)';
+      errorMsg.textContent = '✓ 验证成功，正在进入…';
+      setTimeout(() => { location.href = './resources.html'; }, 500);
+    } else {
+      codeInput.classList.remove('error');
+      void codeInput.offsetWidth; // restart animation
+      codeInput.classList.add('error');
+      errorMsg.style.color = 'var(--danger)';
+      errorMsg.textContent = '验证码错误，请重试 · Incorrect code';
+      codeInput.select();
+    }
+  }
+  document.getElementById('verifyBtn').addEventListener('click', verify);
+  codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') verify(); });
+</script>
+
 </body>
 </html>
