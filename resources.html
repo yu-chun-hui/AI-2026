@@ -16,9 +16,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5/600.css">
 <style>
   :root {
-    --bg-0: #0b0b0c;
-    --bg-1: #121214;
-    --bg-2: #1a1a1d;
+    --bg-0: #0a0d18;
+    --bg-1: #10131e;
+    --bg-2: #171a28;
     --text: #f4f4f4;
     --text-dim: #a8a8b0;
     --text-faint: #6b6b75;
@@ -32,7 +32,7 @@
     --font-mono: 'IBM Plex Mono', ui-monospace, 'JetBrains Mono', Consolas, monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; background: var(--bg-0); color: var(--text); font-family: var(--font-zh); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  html, body { height: 100%; background: linear-gradient(160deg, #0b1122 0%, #080a14 48%, #0a1020 100%) fixed; color: var(--text); font-family: var(--font-zh); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
   body { display: flex; flex-direction: column; min-height: 100vh; position: relative; }
   body::before {
     content: '';
@@ -44,6 +44,16 @@
     pointer-events: none;
     mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 75%);
     -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 75%);
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(55% 45% at 10% 8%, rgba(69,137,255,0.15), transparent 60%),
+      radial-gradient(55% 55% at 92% 90%, rgba(120,169,255,0.11), transparent 60%),
+      radial-gradient(80% 45% at 50% 112%, rgba(69,137,255,0.08), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
   }
 
   .topbar {
