@@ -72,15 +72,6 @@
   .brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-en); font-size: 13px; color: var(--text-dim); letter-spacing: 0.5px; }
   .brand .dot { width: 9px; height: 9px; background: var(--accent); border-radius: 2px; box-shadow: 0 0 14px var(--accent); }
   .brand b { color: var(--text); font-weight: 600; }
-  .repo-pill {
-    font-family: var(--font-mono); font-size: 12px;
-    background: var(--bg-2); border: 1px solid var(--border);
-    padding: 6px 12px; border-radius: 20px;
-    color: var(--text-dim); text-decoration: none;
-    transition: all 0.2s;
-  }
-  .repo-pill:hover { border-color: var(--accent); color: var(--accent-2); }
-
   /* Top-right QR — scan to open this page. Hover to enlarge for the room. */
   .topbar-right { display: flex; align-items: center; gap: 14px; }
   .qr-widget {
@@ -333,7 +324,6 @@
     <span><b>AI 2026</b> · Generative AI Learning Hub</span>
   </div>
   <div class="topbar-right">
-    <a class="repo-pill" href="https://github.com/yu-chun-hui/AI-2026" target="_blank" rel="noopener">⌥ GitHub Repo</a>
     <div class="qr-widget">
       <img src="./qr-ai2026.png" alt="扫码进入 AI 2026 学习中心 · https://yu-chun-hui.github.io/AI-2026/" />
       <span class="qr-cap">扫码进入 · SCAN</span>
