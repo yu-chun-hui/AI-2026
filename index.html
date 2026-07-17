@@ -408,7 +408,16 @@
 
 <script>
   // === 学生验证码 · Student verification code ===
-  const ACCESS_CODE = '2026';
+  // Store only the SHA-256 hash of the code, not the plain text code.
+  const ACCESS_CODE_HASH = '158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab';
+
+  async function sha256Hex(text) {
+    const data = new TextEncoder().encode(text);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join('');
+  }
 
   const modal = document.getElementById('modal');
   const codeInput = document.getElementById('codeInput');
@@ -429,9 +438,10 @@
   modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-  function verify() {
+  async function verify() {
     const val = codeInput.value.trim();
-    if (val === ACCESS_CODE) {
+    const inputHash = await sha256Hex(val);
+    if (inputHash === ACCESS_CODE_HASH) {
       // Grant access for this session and go to the download center.
       sessionStorage.setItem('ai2026_student', '1');
       errorMsg.style.color = 'var(--accent-2)';
